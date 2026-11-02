@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Name Every Algorithm & Data Structure</title>
+<meta name="description" content="How many algorithms and data structures can you name? Like the countries of the world quiz, but for CS." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌳</text></svg>" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="top">
+  <h1>Name every <span class="accent">algorithm</span> &amp; <span class="accent2">data structure</span></h1>
+  <p class="sub">Type names — correct answers fill in automatically. Spelling is forgiving: case, punctuation, plurals, “'s” and the word “algorithm” don't matter.</p>
+  <nav id="quizzes" class="quizzes" aria-label="Choose a quiz"></nav>
+</header>
+
+<section class="panel" id="panel">
+  <div class="stats">
+    <div class="stat"><span id="score" class="big">0</span><span class="of">/ <span id="total">0</span></span></div>
+    <div class="stat"><span id="timer" class="big mono">00:00</span></div>
+    <div class="pct"><div id="bar" class="bar"></div></div>
+  </div>
+  <div class="controls">
+    <input id="guess" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Press Start, then type an algorithm or data structure…" disabled />
+    <button id="start" class="primary">Start</button>
+    <button id="giveup" class="danger" hidden>Give up</button>
+    <button id="reset" hidden>Restart</button>
+  </div>
+  <div class="options">
+    <label>Time limit
+      <select id="limit">
+        <option value="auto">Auto</option>
+        <option value="0">No limit</option>
+        <option value="5">5 min</option>
+        <option value="10">10 min</option>
+        <option value="20">20 min</option>
+        <option value="30">30 min</option>
+        <option value="60">60 min</option>
+      </select>
+    </label>
+    <label class="check"><input id="clues" type="checkbox" /> Show clues</label>
+    <span id="hint" class="hint"></span>
+    <span id="best" class="best"></span>
+  </div>
+  <div id="flash" class="flash" aria-live="polite"></div>
+</section>
+
+<div id="result" class="result" hidden></div>
+
+<main id="board" class="board"></main>
+
+<footer class="foot">
+  Made for fun. Missing something or think an answer should count? Open an issue or PR.
+</footer>
+
+<script src="data.js"></script>
+<script src="normalize.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
