@@ -86,3 +86,8 @@ button.danger { background: transparent; color: var(--bad); border-color: var(--
   .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
   .best { margin-left: 0; }
 }
+
+.export { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.export .label { color: var(--muted); font-size: 13px; }
+.export button { padding: 7px 12px; font-size: 13px; }
+.export-msg { color: var(--good); font-size: 13px; }

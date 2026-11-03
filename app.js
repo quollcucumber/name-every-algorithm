@@ -170,8 +170,108 @@
     const pct = Math.round((100 * n) / total);
     const why = n === total ? "You named them all!" : state.gaveUp ? "You gave up." : "Time's up!";
     el.result.hidden = false;
-    el.result.innerHTML = `<h2>${n} / ${total} (${pct}%)</h2><p>${why} Time: ${fmt(state.elapsed)}. Missed answers are shown in red — click any name to read about it.</p>`;
+    el.result.innerHTML = `<h2>${n} / ${total} (${pct}%)</h2><p>${why} Time: ${fmt(state.elapsed)}. Missed answers are shown in red — click any name to read about it.</p>
+      <div class="export"><span class="label">Export:</span>
+        <button data-export="copy">Copy summary</button>
+        <button data-export="csv">Download CSV</button>
+        <button data-export="png">Download image</button>
+        <span class="export-msg" aria-live="polite"></span></div>`;
   }
+
+  function quizTitle() { return quizId === "all" ? "Everything" : cats[0].title; }
+
+  function catStats() { return cats.map((c) => ({ c, got: c.list.filter((i) => state.guessed.has(i.id)).length })); }
+
+  function summaryText() {
+    const n = state.guessed.size, total = items.length;
+    const lines = [`Name Every Algorithm & Data Structure — ${quizTitle()}`, `${n} / ${total} (${Math.round((100 * n) / total)}%) in ${fmt(state.elapsed)}`];
+    if (cats.length > 1) for (const { c, got } of catStats()) lines.push(`${c.title}: ${got} / ${c.list.length}`);
+    lines.push(location.href.split("#")[0] + "#/" + quizId);
+    return lines.join("\n");
+  }
+
+  function download(name, blob) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  function fileBase() { return `algorithms-${quizId}-${state.guessed.size}of${items.length}`; }
+
+  function exportCsv() {
+    const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
+    const rows = [["Category", "Name", "Named", "Clue"].map(q).join(",")];
+    for (const c of cats) for (const it of c.list) rows.push([c.title, it.name, state.guessed.has(it.id) ? "yes" : "no", it.clue].map(q).join(","));
+    download(fileBase() + ".csv", new Blob(["\ufeff" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" }));
+  }
+
+  function exportPng() {
+    const W = 1200, PAD = 40, SQ = 18, GAP = 4, LABEL = 400;
+    const perRow = Math.floor((W - PAD * 2 - LABEL + GAP) / (SQ + GAP));
+    const stats = catStats();
+    const rowsFor = (c) => Math.ceil(c.list.length / perRow);
+    let H = PAD + 120;
+    for (const { c } of stats) H += Math.max(1, rowsFor(c)) * (SQ + GAP) + 14;
+    H += 40;
+    const dpr = 2;
+    const cv = document.createElement("canvas");
+    cv.width = W * dpr; cv.height = H * dpr;
+    const g = cv.getContext("2d");
+    g.scale(dpr, dpr);
+    const font = (w, px) => `${w} ${px}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+    g.fillStyle = "#0f1115"; g.fillRect(0, 0, W, H);
+    g.fillStyle = "#e6e8ee"; g.font = font(700, 30); g.textBaseline = "top";
+    g.fillText("Name every algorithm & data structure", PAD, PAD);
+    const n = state.guessed.size, total = items.length;
+    g.font = font(600, 20); g.fillStyle = "#7cc4ff";
+    g.fillText(`${quizTitle()} — ${n} / ${total} (${Math.round((100 * n) / total)}%) in ${fmt(state.elapsed)}`, PAD, PAD + 44);
+    g.fillStyle = "#1e222b"; g.fillRect(PAD, PAD + 80, W - PAD * 2, 8);
+    const grad = g.createLinearGradient(PAD, 0, W - PAD, 0);
+    grad.addColorStop(0, "#7cc4ff"); grad.addColorStop(1, "#c39bff");
+    g.fillStyle = grad; g.fillRect(PAD, PAD + 80, ((W - PAD * 2) * n) / total, 8);
+    let y = PAD + 120;
+    for (const { c, got } of stats) {
+      g.font = font(600, 15); g.fillStyle = "#e6e8ee";
+      g.fillText(c.title, PAD, y + 1);
+      g.font = font(500, 14); g.fillStyle = got === c.list.length ? "#3ecf8e" : "#8b93a7";
+      g.textAlign = "right"; g.fillText(`${got} / ${c.list.length}`, PAD + LABEL - 16, y + 2); g.textAlign = "left";
+      c.list.forEach((it, i) => {
+        const x = PAD + LABEL + (i % perRow) * (SQ + GAP);
+        const yy = y + Math.floor(i / perRow) * (SQ + GAP);
+        g.fillStyle = state.guessed.has(it.id) ? "#3ecf8e" : "#5c2323";
+        g.beginPath(); g.roundRect ? g.roundRect(x, yy, SQ, SQ, 4) : g.rect(x, yy, SQ, SQ); g.fill();
+      });
+      y += Math.max(1, rowsFor(c)) * (SQ + GAP) + 14;
+    }
+    g.font = font(400, 13); g.fillStyle = "#8b93a7";
+    g.fillText(location.href.split("#")[0], PAD, H - PAD + 6);
+    cv.toBlob((b) => download(fileBase() + ".png", b), "image/png");
+  }
+
+  async function copySummary(msg) {
+    const text = summaryText();
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); ta.remove();
+    }
+    msg.textContent = "Copied!";
+    setTimeout(() => { msg.textContent = ""; }, 1500);
+  }
+
+  el.result.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-export]");
+    if (!b) return;
+    const kind = b.dataset.export;
+    if (kind === "copy") copySummary(el.result.querySelector(".export-msg"));
+    else if (kind === "csv") exportCsv();
+    else if (kind === "png") exportPng();
+  });
 
   function updateTimer() {
     const lim = limitMs();
@@ -246,8 +346,8 @@
       state.guessed.add(it.id);
       paintCell(it, true);
     }
+    noise = { at: Date.now(), timer: null, raw: el.guess.value, items: matches };
     el.guess.value = "";
-    noise = { at: Date.now(), timer: null };
     const catTitle = (id) => CATS.find((c) => c.id === id).title;
     el.flash.style.color = "";
     el.flash.textContent = "✓ " + matches.map((m) => `${m.name} (${catTitle(m.cat)})`).join(", ");
@@ -256,12 +356,25 @@
     if (state.guessed.size === items.length) finish(false);
   }
 
+  function isNoise(v) {
+    const low = v.toLowerCase();
+    if (NOISE.some((n) => n.startsWith(low))) return true;
+    const k = normalize(noise.raw + v);
+    return noise.items.some((it) => it.keys.some((key) => key.startsWith(k)));
+  }
+
   function onInput() {
     clearPending();
-    const raw = el.guess.value.toLowerCase();
-    if (noise && raw && Date.now() - noise.at < NOISE_WINDOW_MS && NOISE.some((n) => n.startsWith(raw))) {
-      noise.timer = setTimeout(() => { if (el.guess.value.toLowerCase() === raw) el.guess.value = ""; }, 600);
-      return;
+    const raw = el.guess.value;
+    if (noise && raw && Date.now() - noise.at < NOISE_WINDOW_MS) {
+      if (isNoise(raw)) {
+        noise.timer = setTimeout(() => { if (el.guess.value === raw) el.guess.value = ""; }, 600);
+        return;
+      }
+      // The rest of an accepted answer followed by the next guess ("graham" + " scanrsa"): drop the leftover.
+      for (let i = raw.length - 1; i >= 2; i--) {
+        if (isNoise(raw.slice(0, i))) { el.guess.value = raw.slice(i).trimStart(); break; }
+      }
     }
     noise = null;
     const k = normalize(el.guess.value);

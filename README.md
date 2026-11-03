@@ -5,6 +5,7 @@ A JetPunk/Sporcle-style "countries of the world" quiz, but for algorithms and da
 - Type names; correct answers fill in automatically. Matching ignores case, punctuation, diacritics, plurals, possessive `'s` and the word "algorithm", and most entries have aliases (`kmp`, `dsu`, `hld`, `segtree`, ...).
 - If what you typed is also the start of another answer (`bit` vs `bitset`), it waits a moment — press Enter to submit right away.
 - Play everything or a single category (`#/strings`, `#/graph`, ...), with an optional time limit and a "Show clues" mode.
+- When the quiz ends you can export results: copy a text summary, or download a CSV or a PNG of the board.
 - Progress and best scores are saved in `localStorage`. No backend, no network calls.
 
 ## Run locally
